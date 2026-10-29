@@ -45,7 +45,14 @@ def weighted_search(graph, start, goal, heuristic, edge_is_valid):
             if not edge_is_valid(node, neighbor):
                 continue
             # ----- BEGIN TODO 1 -----
-            raise NotImplementedError("TODO 1: replace with cost improvement and priority")
+            new_g = saved_g + edge_cost
+
+            if new_g >= best.get(neighbor, float("inf")):
+                continue
+
+            best[neighbor] = new_g
+            parent[neighbor] = node
+            priority = new_g + heuristic(neighbor)
             # ----- END TODO 1 -----
             heappush(frontier, (priority, next(serial), new_g, neighbor))
     return SearchResult(None, float("inf"), tuple(expanded))

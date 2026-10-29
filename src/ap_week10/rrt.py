@@ -16,7 +16,13 @@ def steer(q_from, q_target, step_size):
     if not np.isfinite(step_size) or step_size <= 0:
         raise ValueError("step_size must be finite and positive")
     # ----- BEGIN TODO 2 -----
-    raise NotImplementedError("TODO 2: replace with your steering calculation")
+    delta = target - origin
+    dist = np.linalg.norm(delta)
+
+    if dist <= step_size:
+        return target.copy()
+
+    return origin + (delta / dist) * step_size
     # ----- END TODO 2 -----
 
 
@@ -49,7 +55,41 @@ def single_tree_rrt(problem, seed=7, max_checks=200, step_size=0.25):
         return finish(np.array(nodes), budget, len(nodes), started)
     while budget.remaining:
         # ----- BEGIN TODO 3 -----
-        raise NotImplementedError("TODO 3: replace with your tree expansion")
+        low = problem.bounds[:, 0]
+        high = problem.bounds[:, 1]
+
+        if rng.random() < 0.15:
+            target = problem.goal
+        else:
+            target = rng.uniform(low, high)
+
+        nearest_index = min(
+            range(len(nodes)),
+            key=lambda i: distance(nodes[i], target)
+        )
+
+        new_state = steer(nodes[nearest_index], target, step_size)
+
+        if not budget.check(nodes[nearest_index], new_state):
+            continue
+
+        nodes.append(new_state)
+        parents.append(nearest_index)
+        new_index = len(nodes) - 1
+
+        if np.array_equal(new_state, problem.goal):
+            path = tree_path(nodes, parents, new_index)
+            return finish(path, budget, len(nodes), started)
+
+        if (
+            distance(new_state, problem.goal) <= step_size
+            and budget.remaining > 0
+        ):
+            if budget.check(new_state, problem.goal):
+                nodes.append(problem.goal.copy())
+                parents.append(new_index)
+                path = tree_path(nodes, parents, len(nodes) - 1)
+                return finish(path, budget, len(nodes), started)
         # ----- END TODO 3 -----
     return finish(None, budget, len(nodes), started)
 
